@@ -6,7 +6,7 @@ import java.awt.event.*;
 
 import javax.swing.*;
 
-// wegdamit2
+// wegdamit3
 
 public class Client extends JFrame {
 	
