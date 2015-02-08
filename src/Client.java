@@ -6,7 +6,7 @@ import java.awt.event.*;
 
 import javax.swing.*;
 
-// miniPush-NEW New
+// wegdamit
 
 public class Client extends JFrame {
 	
