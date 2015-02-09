@@ -6,7 +6,6 @@ import java.awt.event.*;
 
 import javax.swing.*;
 
-// miniPush-NEW Newz6
 
 public class Client extends JFrame {
 	
@@ -168,8 +167,7 @@ public class Client extends JFrame {
 			showMessage(message);
 			}
 			
-		}while(!message.equals("server: killclient"));
-		
+		}while(!message.substring(22).equals("killclient"));
 		return false;
 		
 		
