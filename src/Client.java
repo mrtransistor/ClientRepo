@@ -6,7 +6,7 @@ import java.awt.event.*;
 
 import javax.swing.*;
 
-// miniPush-NEW New
+// miniPush-NEW Newz6
 
 public class Client extends JFrame {
 	
