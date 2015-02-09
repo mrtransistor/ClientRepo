@@ -19,12 +19,10 @@ public class ClientTest {
 		
 	}
 	
-	public static void main(String[] args) {
-		
+	private static String printAskGui() {
 		ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
-	    Future<String> ask = singleThreadExecutor.submit(new AskGui());
+	    Future<String> ask = singleThreadExecutor.submit(new AskGui("Host?", "Bitte geben Sie die Server IP ein:"));
 		String a ="";
-		Client test = null;
 		try {
 			a = ask.get();
 			System.out.println(a);
@@ -35,8 +33,25 @@ public class ClientTest {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		test = new Client(a);
+		return a;
+	}
+	
+	public static void main(String[] args) {
+		boolean schalter = true;
+		while(schalter) {
+		
+		Client test = null; 					//leeres ClientObjekt anlegen
+		test = new Client(printAskGui()); 		//Client initialisieren mit RückgabeWert(IP) von printAskGui()
 		test.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		test.startClient();
+		test.startClient();						//Clientfunktionalität starten
+		test.dispose();
+		
+		AskUserYesNo endFrage = new AskUserYesNo("Reconnect?", "Frage an User");
+		if(!endFrage.printGui()) {
+			schalter = false;
+		}
+		
+		}
+		System.out.println("Programm Beendet");
 	}
 }

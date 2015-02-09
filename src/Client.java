@@ -98,12 +98,9 @@ public class Client extends JFrame {
 		boolean schalter = true;
 		try{
 			killConnectionOnClose();
-			while(schalter) {
 				connectToServer();
 				setupStreams();
 				schalter = whileChatting();
-			}
-			
 		}catch(EOFException eofException){
 			eofException.printStackTrace();
 		}catch(IOException ioException) {
@@ -167,10 +164,8 @@ public class Client extends JFrame {
 			showMessage(message);
 			}
 			
-		}while(!message.substring(22).equals("killclient"));
+		}while(!message.substring(22,32).equals("killclient"));
 		return false;
-		
-		
 	}
 	//Shutdown IOStream and connections
 	private void closeCrap() {

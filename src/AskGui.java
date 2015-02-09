@@ -15,22 +15,27 @@ public class AskGui implements Callable<String> {
 	JLabel askLabel;
 	JTextField answerTextField;
 	String hostAddress = "";
+	String tempNameOfFrame = "";
+	String questionString = "";
 	
-	public AskGui() {
+	
+	public AskGui(String nameOfFrame, String questionToUser) {
+		tempNameOfFrame = nameOfFrame;
+		questionString = questionToUser;
 	}
 	
 	public String call() {
 			System.out.println("Leer?" + hostAddress.isEmpty());
-			askFrame = new JFrame("Welcher Host?");
+			askFrame = new JFrame(tempNameOfFrame);
 			askFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			askLabel = new JLabel("Bitte geben sie die Host IP ein");
+			askLabel = new JLabel(questionString);
 			answerTextField = new JTextField();
 			answerTextField.addActionListener(
 					new ActionListener() {
 						public void actionPerformed(ActionEvent event){
 							hostAddress = answerTextField.getText();
 							//System.out.println("IP: " + hostAddress);
-							answerTextField.setText("Dankefür ihre Eingabe");
+							answerTextField.setText("Danke für ihre Eingabe");
 							answerTextField.setEditable(false);
 							askFrame.dispose();
 						}
@@ -39,7 +44,7 @@ public class AskGui implements Callable<String> {
 			askFrame.add(answerTextField, BorderLayout.SOUTH);
 			askFrame.setSize(350, 150);
 			askFrame.pack();
-			askFrame.setLocationRelativeTo(null);
+			askFrame.setLocation(175, 150);
 			askFrame.setVisible(true);
 			System.out.println(askFrame.isActive());
 			boolean isEmpty = true;
