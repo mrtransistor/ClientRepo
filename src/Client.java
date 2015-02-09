@@ -10,7 +10,7 @@ import javax.swing.*;
 
 public class Client extends JFrame {
 	
-	/**
+	/*
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
