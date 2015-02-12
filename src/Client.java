@@ -19,7 +19,7 @@ public class Client extends JFrame {
 	private JTextField userText;
 	private JTextArea chatWindow;
 	private ObjectOutputStream output;
-	private ObjectInputStream input;
+	private ObjectInputStream getConnectionInfoFromServer;
 	private String message = "";
 	private String serverIP;
 	private Socket connection = null; 
@@ -60,7 +60,7 @@ public class Client extends JFrame {
 		        buttonEncryptedSend.addActionListener( new ActionListener() {
 		  		  @Override public void actionPerformed( ActionEvent event ) {
 		  			    
-		  			    sendMessageEncrypted(userText.getText() + "  +*+"); // Eingabe holen
+		  			    sendMessageEncrypted(userText.getText()); // Eingabe holen
 		  				userText.setText(""); //reset Texteingabefeld
 		  		  }
 		  		} );	        
@@ -97,7 +97,7 @@ public class Client extends JFrame {
 	public void startClient() {
 		boolean schalter = true;
 		try{
-			killConnectionOnClose();
+			//killConnectionOnClose();
 				connectToServer();
 				setupStreams();
 				schalter = whileChatting();
@@ -114,17 +114,18 @@ public class Client extends JFrame {
 	//Verbindung zum Server aufbauen
 	private void connectToServer() throws IOException {
 		showMessage("\ntrying to connect...");
-		
 		connection = new Socket(InetAddress.getByName(serverIP), 3333);
+		System.out.println("IsConnected: " + connection.isConnected());
 		showMessage("\nconnected to server: " + connection.getInetAddress().getHostName());
 	}
 
 	//IOStreams starten und konfigurieren
 	private void setupStreams() throws IOException {
 		
+		getConnectionInfoFromServer = new ObjectInputStream(connection.getInputStream());
 		output = new ObjectOutputStream(connection.getOutputStream());
+		System.out.println("A:" + connection.getLocalPort());
 		output.flush();
-		input = new ObjectInputStream(connection.getInputStream());
 		showMessage("\n iostreams eingerichtet\n");
 		showMessage("---------Konversation beginnt--------");
 	}
@@ -133,7 +134,8 @@ public class Client extends JFrame {
 	private boolean whileChatting() throws IOException {
 		
 		try {
-			message = (String) input.readObject();
+			
+			message = (String) getConnectionInfoFromServer.readObject();
 			cryptoModule.e =  new BigInteger(message.substring(0, message.indexOf("+")) );
 			cryptoModule.n = new BigInteger(message.substring(message.indexOf("+"), message.length()-1 ));
 			cryptoModule.rounds = Integer.parseInt(message.substring(message.length()-1));
@@ -152,7 +154,7 @@ public class Client extends JFrame {
 		ableToType(true);
 		do{
 				try {
-				message = (String) input.readObject();
+				message = (String) getConnectionInfoFromServer.readObject();
 				}catch(ClassNotFoundException classNotFoundException) {
 				showMessage("Shitty Data received...");
 			}
@@ -163,8 +165,7 @@ public class Client extends JFrame {
 			}else{
 			showMessage(message);
 			}
-			
-		}while(!message.substring(22,32).equals("killclient"));
+		}while(!message.substring(22).equals("killclient"));
 		return false;
 	}
 	//Shutdown IOStream and connections
@@ -173,7 +174,7 @@ public class Client extends JFrame {
 		ableToType(false);
 		try{
 			output.close();
-			input.close();
+			getConnectionInfoFromServer.close();
 			connection.close();
 		}catch(IOException ioexception) {
 			ioexception.printStackTrace();
@@ -209,11 +210,11 @@ public class Client extends JFrame {
 		public void sendMessageEncrypted(String message) {
 			
 			try{
-				output.writeObject("cr1" + cryptoModule.encryptMessage("client[" + new java.util.Date().toString().substring(4,16) + "]:\n" + message, cryptoModule.rounds));
+				output.writeObject("cr1" + cryptoModule.encryptMessage("client[-c- " + new java.util.Date().toString().substring(4,16) + "]:\n" + message, cryptoModule.rounds));
 				output.flush();
 				//writeLogFile("client[" + new java.util.Date().toString().substring(4,16) + "]:\n"+ message + "\n", new File("/home/mrtransistor/workspace/InputOutputInterface/src/logFile.log"));
-				System.out.println(cryptoModule.encryptMessage("client: " + message, cryptoModule.rounds));
-				showMessage("client[" + new java.util.Date().toString().substring(4,16) + "]:\n"+ message);
+				//System.out.println(cryptoModule.encryptMessage("client: " + message, cryptoModule.rounds));
+				showMessage("client[-c- " + new java.util.Date().toString().substring(4,16) + "]:\n"+ message);
 			}catch(IOException ioException){
 				ioException.printStackTrace();
 			}
