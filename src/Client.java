@@ -218,7 +218,7 @@ public class Client extends JFrame {
 			output.writeObject(userName + "[" + new java.util.Date().toString().substring(4,16) + "]:\n"+ message);
 			output.flush();
 			//writeLogFile("client[" + new java.util.Date().toString().substring(4,16) + "]:\n"+ message + "\n", new File("/home/mrtransistor/workspace/InputOutputInterface/src/logFile.log"));
-			showMessage(userName + "[" + new java.util.Date().toString().substring(4,16) + "]:\n"  + message);
+			//showMessage(userName + "[" + new java.util.Date().toString().substring(4,16) + "]:\n"  + message);
 		}catch(IOException ioException) {
 			chatWindow.append("\n nachrichten senden führte zu fehler");
 		}	
@@ -231,7 +231,7 @@ public class Client extends JFrame {
 				output.flush();
 				//writeLogFile("client[" + new java.util.Date().toString().substring(4,16) + "]:\n"+ message + "\n", new File("/home/mrtransistor/workspace/InputOutputInterface/src/logFile.log"));
 				//System.out.println(cryptoModule.encryptMessage("client: " + message, cryptoModule.rounds));
-				showMessage(userName + "[-c- " + new java.util.Date().toString().substring(4,16) + "]:\n"+ message);
+				//showMessage(userName + "[-c- " + new java.util.Date().toString().substring(4,16) + "]:\n"+ message);
 			}catch(IOException ioException){
 				ioException.printStackTrace();
 			}
