@@ -19,9 +19,9 @@ public class ClientTest {
 		
 	}
 	
-	private static String printAskGui() {
+	private static String printAskGui(String Name, String Question) {
 		ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
-	    Future<String> ask = singleThreadExecutor.submit(new AskGui("Host?", "Bitte geben Sie die Server IP ein:"));
+	    Future<String> ask = singleThreadExecutor.submit(new AskGui(Name, Question));
 		String a ="";
 		try {
 			a = ask.get();
@@ -41,16 +41,16 @@ public class ClientTest {
 		while(schalter) {
 		
 		Client test = null; 					//leeres ClientObjekt anlegen
-		test = new Client(printAskGui()); 		//Client initialisieren mit RückgabeWert(IP) von printAskGui()
+		test = new Client(printAskGui("Host?", "Bitte geben Sie die Server IP ein:"), printAskGui("Clientname", "Ihr Name? ")); 		//Client initialisieren mit RückgabeWert(IP) von printAskGui()
 		test.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		test.startClient();						//Clientfunktionalität starten
 		test.dispose();
 		
-		AskUserYesNo endFrage = new AskUserYesNo("Reconnect?", "Frage an User");
+		/*AskUserYesNo endFrage = new AskUserYesNo("Reconnect?", "Frage an User");
 		if(!endFrage.printGui()) {
 			schalter = false;
-		}
-		
+		}*/
+		schalter = false;
 		}
 		System.out.println("Programm Beendet");
 	}

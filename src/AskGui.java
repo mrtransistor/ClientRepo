@@ -30,6 +30,7 @@ public class AskGui implements Callable<String> {
 			askFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			askLabel = new JLabel(questionString);
 			answerTextField = new JTextField();
+			answerTextField.setText("localhost");
 			answerTextField.addActionListener(
 					new ActionListener() {
 						public void actionPerformed(ActionEvent event){
