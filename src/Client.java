@@ -54,7 +54,6 @@ public class Client extends JFrame {
 		buttonSend.addActionListener( new ActionListener() {	
 		public void actionPerformed( ActionEvent event ) {
 			    sendMessage(userText.getText()); // Eingabe holen
-			    System.out.println(userText.getText());
 			    userText.setText(""); //reset Textfeld
 				  }
 				});    
@@ -70,7 +69,8 @@ public class Client extends JFrame {
 		  		} );	        
 		        //Encrypted Fire Fire Fire Fire
 		    	buttonFire = new JButton("Fire");
-				//buttonFire.setSize(125,35);
+				
+		    	//buttonFire.setSize(125,35);
 		    	buttonFire.addActionListener( new ActionListener() {
 		    		  @Override public void actionPerformed( ActionEvent event ) {
 		    			    sendMessage(userText.getText() ); // Eingabe holen
@@ -98,13 +98,16 @@ public class Client extends JFrame {
 	}
 	
 	//client startet arbeit
-	public void startClient() {
-		boolean schalter = true;
+	public void startClient() throws IndexOutOfBoundsException {
 		try{
-			//killConnectionOnClose();
 				connectToServer();
 				setupStreams();
-				schalter = whileChatting();
+				try{
+					whileChatting();	
+				}catch(IndexOutOfBoundsException indexOutOfBoundsException) {
+					closeCrap();
+				}
+				
 		}catch(EOFException eofException){
 			eofException.printStackTrace();
 		}catch(IOException ioException) {
@@ -133,39 +136,7 @@ public class Client extends JFrame {
 	}
 	
 	//während der unterhaltung
-	private boolean whileChatting() throws IOException {
-		
-		try {
-			//RSA Konfiguration Start
-			message = (String) input.readObject();
-			cryptoModule.e =  new BigInteger(message.substring(0, message.indexOf("+")) );
-			cryptoModule.n = new BigInteger(message.substring(message.indexOf("+"), message.length()-1 ));
-			cryptoModule.rounds = Integer.parseInt(message.substring(message.length()-1));
-			System.out.println("e: " + cryptoModule.e);
-			System.out.println("n: " + cryptoModule.n);
-
-			
-			//RSA Konfiguration Ende
-			
-			System.out.println("e: " + cryptoModule.e + "  n: " + cryptoModule.n + " rounds: " + cryptoModule.rounds);
-			System.out.println("Welcher subKey? (0 - 48)");
-			// zufällige Generierung eines SubstitutionsSchlüssels
-			final String key =Integer.toString( (int) (Math.random() * 8 + 1) );
-			// Zu übertragender SubKeyWert wird an KryptoObjekt übertragen*/
-			cryptoModule.subKey = Integer.parseInt(key);
-			System.out.println("SubKey: " + key);
-			String asciiName = "";
-			for(int i = 0; i < userName.length(); i++) {
-				asciiName += (int) userName.charAt(i);
-			}
-			//SubKey verschlüsseln und für Übertragung vorbereiten*/
-			message = (cryptoModule.publicKeyEncrypt(new BigInteger(key), cryptoModule.e, cryptoModule.n)).toString();
-			//SubKey wird übertragen*/
-			hiddenSend(message + "|" + userName); 
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	private void whileChatting() throws IOException {
 		//Ende des Verbindungsaufbaus und der RSA-Übertragung. Chatfunktion startet...
 		ableToType(true); 
 		do{
@@ -184,7 +155,6 @@ public class Client extends JFrame {
 			showMessage(talkMessage);
 			}
 		}while(!talkMessage.substring(22).equals("killclient"));
-		return false;
 	}
 	//Shutdown IOStream and connections
 	private void closeCrap() {
