@@ -13,9 +13,12 @@ public class Client extends JFrame {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private final JButton buttonSend;
-	private final JButton buttonEncryptedSend;
-	private final JButton buttonFire;
+	String host;
+	String clientName;
+	KryptoClient clientCrypto;
+	private final JButton buttonSend = new JButton( "Send" );
+	private final JButton buttonEncryptedSend = new JButton("crypt Send");
+	private final JButton buttonFire = new JButton("Fire");
 	private JTextField userText;
 	private JTextArea chatWindow;
 	private ObjectOutputStream output;
@@ -24,15 +27,28 @@ public class Client extends JFrame {
 	private String talkMessage = "";
 	private String serverIP;
 	private Socket connection = null; 
-	KryptoClient cryptoModule;
 	private String rounds;
 	private String userName = "";
 	//constructor
-	public Client(String host, String clientName) {
+	public Client(String host, String clientName) throws ClassNotFoundException{
 		super("AWIM - CLIENT - UserName: "+ clientName);
+				this.host = host;
+				this.clientName = clientName;
+				//RSA wird eingerichtet
+				clientCrypto = new KryptoClient();
+				//ClientGui zeichnen
+				printClientGui();
+				//Client starten
+				startClient();
+				//ClientGui zerstören
+				dispose();
+	}
+	/**
+	 * 
+	 */
+	private void printClientGui() {
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		userName = clientName;
-		//System.out.println("Name: " + clientName);
-		cryptoModule= new KryptoClient(); //Kryptomodul erzeugen
 		serverIP = host;
 		userText = new JTextField();
 		userText.setEditable(false);
@@ -40,25 +56,25 @@ public class Client extends JFrame {
 		userText.addActionListener(
 				new ActionListener() {
 					public void actionPerformed(ActionEvent event){
-						sendMessage(event.getActionCommand());
-						userText.setText("");
+						if(! userText.getText().equals("") ) {
+							sendMessage(event.getActionCommand());
+							userText.setText("");
+						}
 					}
 				}
 				
 		);
 		//Chatwindow erzeugen
 		chatWindow = new JTextArea();
-		//Send Button
-		buttonSend = new JButton( "Send" );
 		//buttonSend.setSize(125,35);
 		buttonSend.addActionListener( new ActionListener() {	
 		public void actionPerformed( ActionEvent event ) {
-			    sendMessage(userText.getText()); // Eingabe holen
-			    userText.setText(""); //reset Textfeld
+			    if(! userText.getText().equals("") ) {
+			    	sendMessage(userText.getText()); // Eingabe holen
+			    	userText.setText(""); //reset Textfeld
+			    }
 				  }
 				});    
-		        //Encrypted SendButton
-		        buttonEncryptedSend = new JButton("crypt Send");
 				//buttonEncryptedSend.setSize(125,35);
 		        buttonEncryptedSend.addActionListener( new ActionListener() {
 		  		  @Override public void actionPerformed( ActionEvent event ) {
@@ -67,9 +83,6 @@ public class Client extends JFrame {
 		  				userText.setText(""); //reset Texteingabefeld
 		  		  }
 		  		} );	        
-		        //Encrypted Fire Fire Fire Fire
-		    	buttonFire = new JButton("Fire");
-				
 		    	//buttonFire.setSize(125,35);
 		    	buttonFire.addActionListener( new ActionListener() {
 		    		  @Override public void actionPerformed( ActionEvent event ) {
@@ -96,13 +109,16 @@ public class Client extends JFrame {
 				setSize(550, 280);
 				setVisible(true);
 	}
-	
-	//client startet arbeit
-	public void startClient() throws IndexOutOfBoundsException {
+	/**
+	 * 
+	 * @throws IndexOutOfBoundsException
+	 */
+	public void startClient() throws IndexOutOfBoundsException, ClassNotFoundException {
 		try{
 				connectToServer();
 				setupStreams();
 				try{
+					setupKrypto();
 					whileChatting();	
 				}catch(IndexOutOfBoundsException indexOutOfBoundsException) {
 					closeCrap();
@@ -127,36 +143,61 @@ public class Client extends JFrame {
 	}
 
 	//IOStreams starten und konfigurieren
-	private void setupStreams() throws IOException {
-		output = new ObjectOutputStream(connection.getOutputStream());
-		output.flush();
-		input = new ObjectInputStream(connection.getInputStream());
+	private void setupStreams() throws ClassNotFoundException {
+		try {
+			output = new ObjectOutputStream(connection.getOutputStream());
+			output.flush();
+		} catch (IOException e) {
+		// TODO Auto-generated catch block
+			System.out.println("Fehler beim Senden");
+			e.printStackTrace();
+		}
+		try {
+			input = new ObjectInputStream(connection.getInputStream());
+		} catch (IOException e) {
+			System.out.println("Fehler beim empfangen");
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("Streams eingerichtet");
 		showMessage("\n iostreams eingerichtet\n");
 		showMessage("---------Konversation beginnt--------");
 	}
 	
-	//während der unterhaltung
-	private void whileChatting() throws IOException {
-		//Ende des Verbindungsaufbaus und der RSA-Übertragung. Chatfunktion startet...
-		ableToType(true); 
-		do{
-				try {
-				talkMessage = (String) input.readObject();
-				}catch(ClassNotFoundException classNotFoundException) {
-				showMessage("Shitty Data received...");
-				}catch(EOFException eofException) {
-					System.out.println("talkMessage:" + talkMessage);
-				}
-			if(talkMessage.startsWith("cr1")) {
-				//System.out.println("Cipher: " + message);	
-				talkMessage = cryptoModule.decryptMessage(talkMessage.substring(3), cryptoModule.rounds);
-				showMessage(talkMessage);
-			}else{
-			showMessage(talkMessage);
-			}
-		}while(!talkMessage.substring(22).equals("killclient"));
+	private void setupKrypto() throws IOException, ClassNotFoundException{
+		//Oeffentlichen Schluessel an Client uebertragen
+		output.writeObject(clientCrypto.e.toString() + "&" + clientCrypto.n.toString() +":"+ clientName);
+		output.flush();
+		System.out.println("RSAnachricht: " + clientCrypto.e.toString() + "&" + clientCrypto.n.toString());
+		
+		System.out.println("Subkey holen und setzen");
+		clientCrypto.setCryptoConfig(clientCrypto.privateKeyDecrypt(new BigInteger((String) input.readObject())).toString());
+		showMessage("Verschlüsselung zu Server: " + connection.getInetAddress().getCanonicalHostName() + " eingerichtet");
 	}
-	//Shutdown IOStream and connections
+	
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	private void whileChatting() throws IOException, EOFException, ClassNotFoundException {
+		//Ende des Verbindungsaufbaus und der RSA-Uebertragung. Chatfunktion startet...
+		ableToType(true); 
+		do{	
+			talkMessage = (String) input.readObject();
+			if(!talkMessage.startsWith("@rsa")) { //RSA Verbindungsdaten ignorieren
+				if(talkMessage.startsWith("cr1")) {
+					//System.out.println("Cipher: " + message);	
+					talkMessage = clientCrypto.decryptMessage(talkMessage.substring(3), clientCrypto.rounds);
+					showMessage(talkMessage);
+				}else{
+					showMessage(talkMessage);
+				}
+			}
+		}while(true);
+	}
+	/**
+	 * 
+	 */
 	private void closeCrap() {
 		showMessage("\n shutting down connection");
 		ableToType(false);
@@ -169,6 +210,10 @@ public class Client extends JFrame {
 		}	
 	}
 	
+	/**
+	 * 
+	 * @param message
+	 */
 	private void hiddenSend(String message) {
 		
 		try{System.out.println(message);
@@ -183,6 +228,10 @@ public class Client extends JFrame {
 	
 	}
 	
+	/**
+	 * 
+	 * @param message
+	 */
 	private void sendMessage(String message) {
 		try{
 			output.writeObject(userName + "[" + new java.util.Date().toString().substring(4,16) + "]:\n"+ message);
@@ -194,10 +243,13 @@ public class Client extends JFrame {
 		}	
 	}
 	
-	//Nachricht senden
+	/**
+	 * 
+	 * @param message
+	 */
 		public void sendMessageEncrypted(String message) {
 			try{
-				output.writeObject("cr1" + cryptoModule.encryptMessage(userName + "[-c- " + new java.util.Date().toString().substring(4,16) + "]:\n" + message, cryptoModule.rounds));
+				output.writeObject("cr1" + clientCrypto.encryptMessage(userName + "[-c- " + new java.util.Date().toString().substring(4,16) + "]:\n" + message, clientCrypto.rounds));
 				output.flush();
 				//writeLogFile("client[" + new java.util.Date().toString().substring(4,16) + "]:\n"+ message + "\n", new File("/home/mrtransistor/workspace/InputOutputInterface/src/logFile.log"));
 				//System.out.println(cryptoModule.encryptMessage("client: " + message, cryptoModule.rounds));
@@ -208,7 +260,9 @@ public class Client extends JFrame {
 		
 		}
 		
-		//Nachrichten in Textbox anzeigen
+		/**
+		 * 
+		 */
 		private void killConnectionOnClose() {
 			new Runnable() {
 					public void run() {
@@ -219,7 +273,9 @@ public class Client extends JFrame {
 			};
 		}
 	
-	//Nachrichten in Textbox anzeigen
+	/**
+	 * 
+	 */
 	private void showMessage(final String m) {
 		SwingUtilities.invokeLater(
 				new Runnable() {
@@ -240,6 +296,11 @@ public class Client extends JFrame {
 				}
 			);
 		}
+		/**
+		 * 
+		 * @param s
+		 * @param file
+		 */
 		public void writeLogFile(String s, File file) {			
 			try {
 				Writer stringWriter = new FileWriter(file, true);		//Neuer FileWriter
@@ -250,6 +311,8 @@ public class Client extends JFrame {
 				e.printStackTrace();
 			}
 		}
+		
+
 	
 	
 }

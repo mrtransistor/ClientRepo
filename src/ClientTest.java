@@ -39,12 +39,14 @@ public class ClientTest {
 	public static void main(String[] args) {
 		boolean schalter = true;
 		while(schalter) {
+
+		try {
+			new Client(printAskGui("Host?", "Bitte geben Sie die Server IP ein:"), printAskGui("Clientname", "Ihr Name? "));
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 		//Client initialisieren mit RückgabeWert(IP) von printAskGui()
 		
-		Client test = null; 					//leeres ClientObjekt anlegen
-		test = new Client(printAskGui("Host?", "Bitte geben Sie die Server IP ein:"), printAskGui("Clientname", "Ihr Name? ")); 		//Client initialisieren mit RückgabeWert(IP) von printAskGui()
-		test.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		test.startClient();						//Clientfunktionalität starten
-		test.dispose();
 		
 		/*AskUserYesNo endFrage = new AskUserYesNo("Reconnect?", "Frage an User");
 		if(!endFrage.printGui()) {

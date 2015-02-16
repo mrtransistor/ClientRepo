@@ -11,6 +11,7 @@ public class KryptoClient {
 	public BigInteger n = new BigInteger("0"); //Öffentlicher Schlüssel n
 	public BigInteger e;  
 	private BigInteger d; 
+	private String cryptoConfig; 
 	private final int[] primeArray = {11093, 11113, 11117, 11119, 11131, 11149, 11159, 11161, 11171, 11173, 11177, 11197, 11213, 11239,	
 			  15107, 15121, 15131, 15137, 15139, 15149, 15161, 15173, 15187, 15193, 15199, 15217, 15227, 15233,
 			  17011, 17021, 17027, 17029, 17033, 17041, 17047, 17053, 17077, 17093, 17099, 17107, 17117, 17123,
@@ -18,10 +19,16 @@ public class KryptoClient {
 			  18217, 18223, 18229, 18233, 18251, 18253, 18257, 18269, 18287, 18289, 18301, 18307, 18311, 18313};
 	int subKey;
 	
+	public void setCryptoConfig(String cryptoConfig) {
+		//TODO spaeter cryptoConfig final setzen nach initialisierung
+		this.cryptoConfig = cryptoConfig;
+		System.out.println("Subkey : " + this.cryptoConfig);
+		subKey = Integer.parseInt(this.cryptoConfig);
+	}
+	
 	public KryptoClient() {
-		
-		subKey = 3;
-		
+		//RSA Verschlüsselungsinformationen bereitstellen
+		startRSA();
 	}
 	
 	public String intToString(int integer) {
@@ -177,8 +184,8 @@ public class KryptoClient {
 		//System.out.println(choose1 + "  |  " + choose2);
 	}
 	
-	private void calcN(BigInteger p, BigInteger q){
-		n =  p.multiply(q);
+	private void calcN(){
+		n =  choose1.multiply(choose2);
 	}
 	
 	public void calcE(BigInteger phi_N) {
@@ -208,9 +215,9 @@ public void calcD(BigInteger phi_N, BigInteger e) {
 		d = result; //return D
 	}
 	
-	public BigInteger startRSA(){
+	public void startRSA(){
 		getTwoRandomPrimes();
-		calcN(choose1, choose2);
+		calcN();
 		System.out.println(n);
 		BigInteger phi_N = (choose1.subtract(BigInteger.ONE)).multiply( choose2.subtract( BigInteger.ONE) );
 		calcE(phi_N);
@@ -219,12 +226,22 @@ public void calcD(BigInteger phi_N, BigInteger e) {
 		System.out.println("n: " + n + " e: " + e + " d: " + d);
 		//System.out.println("Cipher: " + message.modPow(e, n));
 		//System.out.println("Message: " + message.modPow(e,n).modPow(d, n));
-		System.out.println("e: " + e + " n: " + n);
-		return e;
+		//System.out.println("e: " + e + " n: " + n);
 	
 }
+	/**
+	 * public BigInteger privateKeyDecrypt(BigInteger message, BigInteger e, BigInteger n) entchlüsselt mit 
+	 * entsprechendem privateKey verschlüsselte Nachricht
+	 * @param message
+	 * @param e
+	 * @param n
+	 * @return
+	 */
+	public BigInteger privateKeyDecrypt(BigInteger message) {
+		return message.modPow(d, n); 
+		}
 	
-	public BigInteger publicKeyEncrypt(BigInteger message, BigInteger e, BigInteger n) {
+	public BigInteger publicKeyEncrypt(BigInteger message) {
 		return message.modPow(e, n); 
 	}
 	
