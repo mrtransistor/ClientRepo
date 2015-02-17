@@ -66,7 +66,7 @@ public class Client extends JFrame {
 		);
 		//Chatwindow erzeugen
 		chatWindow = new JTextArea();
-		//buttonSend.setSize(125,35);
+		chatWindow.setLineWrap(true);
 		buttonSend.addActionListener( new ActionListener() {	
 		public void actionPerformed( ActionEvent event ) {
 			    if(! userText.getText().equals("") ) {
@@ -165,13 +165,30 @@ public class Client extends JFrame {
 	}
 	
 	private void setupKrypto() throws IOException, ClassNotFoundException{
-		//Oeffentlichen Schluessel an Client uebertragen
+		String tempInput = "";
+		//Oeffentlichen Schluessel an Server uebertragen
 		output.writeObject(clientCrypto.e.toString() + "&" + clientCrypto.n.toString() +":"+ clientName);
 		output.flush();
 		System.out.println("RSAnachricht: " + clientCrypto.e.toString() + "&" + clientCrypto.n.toString());
 		
+
+		tempInput = (String) input.readObject();
+		System.out.println("tempInput: " + tempInput);
+		//Password benoetigt ?
+		if(tempInput.equals("::pw::")) {
+		AskPassword myPassword = new AskPassword("Passwortabfrage", "Der Server verlangt ein Passwort");
+		System.out.println("Passwort: " + myPassword.answerOfUser);
+		output.writeObject(myPassword.answerOfUser);
+		output.flush();
+		}
+		
 		System.out.println("Subkey holen und setzen");
+		try{
 		clientCrypto.setCryptoConfig(clientCrypto.privateKeyDecrypt(new BigInteger((String) input.readObject())).toString());
+		}catch(EOFException eofException) {
+			System.out.println("Passwort abgelehnt");
+			this.dispose();
+		}
 		showMessage("Verschlüsselung zu Server: " + connection.getInetAddress().getCanonicalHostName() + " eingerichtet");
 	}
 	

@@ -14,7 +14,7 @@ public class AskUserYesNo {
 	private String globalQuestion = "";
 	private String globalNameOfFrame = "";
 	boolean getKillGui = true;
-	boolean getBool = true;
+	boolean getUserDecision = true;
 	
 	public AskUserYesNo(String question, String nameOfFrame) {
 		globalNameOfFrame = nameOfFrame;
@@ -30,14 +30,14 @@ public class AskUserYesNo {
 		yesButton.addActionListener(new ActionListener() {
 			public void actionPerformed( ActionEvent event ) {
 				getKillGui = false;
-				getBool = true;
+				getUserDecision = true;
 			}
 		});
 		JButton noButton = new JButton("Nein");
 		noButton.addActionListener(new ActionListener() {
 			public void actionPerformed( ActionEvent event ) {
 				getKillGui = false;
-				getBool = false;
+				getUserDecision = false;
 			}
 		});
     	JPanel buttonPanel = new JPanel();
@@ -54,7 +54,8 @@ public class AskUserYesNo {
 			System.out.println("warten....");
 		}
 		askFrame.dispose();
-		return getBool;
+		System.out.println("decision: " + getUserDecision);
+		return getUserDecision;
 	}
 	
 

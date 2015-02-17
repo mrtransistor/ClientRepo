@@ -48,11 +48,11 @@ public class ClientTest {
 		} 		//Client initialisieren mit RückgabeWert(IP) von printAskGui()
 		
 		
-		/*AskUserYesNo endFrage = new AskUserYesNo("Reconnect?", "Frage an User");
+		AskUserYesNo endFrage = new AskUserYesNo("Reconnect?", "Frage an User");
 		if(!endFrage.printGui()) {
 			schalter = false;
-		}*/
-		schalter = false;
+		}
+
 		}
 		System.out.println("Programm Beendet");
 	}
