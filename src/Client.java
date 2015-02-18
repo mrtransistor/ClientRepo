@@ -4,7 +4,15 @@ import java.net.*;
 import java.awt.*;
 import java.awt.event.*;
 
+import javax.management.Attribute;
 import javax.swing.*;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultCaret;
+import javax.swing.text.Document;
+import javax.swing.text.StyledDocument;
+import javax.swing.text.html.HTMLDocument;
+import javax.swing.text.html.HTMLEditorKit;
+
 
 
 public class Client extends JFrame {
@@ -20,7 +28,7 @@ public class Client extends JFrame {
 	private final JButton buttonEncryptedSend = new JButton("crypt Send");
 	private final JButton buttonFire = new JButton("Fire");
 	private JTextField userText;
-	private JTextArea chatWindow;
+	private JTextPane chatWindow;
 	private ObjectOutputStream output;
 	private ObjectInputStream input;
 	private String message = "";
@@ -29,6 +37,7 @@ public class Client extends JFrame {
 	private Socket connection = null; 
 	private String rounds;
 	private String userName = "";
+	private String myNameColor = "";
 	//constructor
 	public Client(String host, String clientName) throws ClassNotFoundException{
 		super("AWIM - CLIENT - UserName: "+ clientName);
@@ -38,10 +47,41 @@ public class Client extends JFrame {
 				clientCrypto = new KryptoClient();
 				//ClientGui zeichnen
 				printClientGui();
+				//Farbe setzen
+				setRandomNameColor();
+				showMessage("Ihre zufällige Farbe ist: " + myNameColor);
 				//Client starten
 				startClient();
 				//ClientGui zerstören
 				dispose();
+	}
+	
+	/**
+	 * 
+	 */
+	void setRandomNameColor() {
+		String singleHexValue;
+		for(int i = 0; i < 6; i++) {
+			singleHexValue = String.valueOf((int) Math.round( Math.random() * 15));
+			switch(singleHexValue) {
+			
+			case "10": singleHexValue = "A";
+			break;
+			case "11": singleHexValue = "B";
+			break;
+			case "12": singleHexValue = "C";
+			break;
+			case "13": singleHexValue = "D";
+			break;
+			case "14": singleHexValue = "E";
+			break;
+			case "15": singleHexValue = "F";
+			break;
+			}
+			System.out.println(singleHexValue);
+			//Farbe für Clientnamen setzen
+			myNameColor += singleHexValue;
+		}
 	}
 	/**
 	 * 
@@ -65,8 +105,12 @@ public class Client extends JFrame {
 				
 		);
 		//Chatwindow erzeugen
-		chatWindow = new JTextArea();
-		chatWindow.setLineWrap(true);
+		chatWindow = new JTextPane();
+		chatWindow.setContentType("text/html");
+		chatWindow.setEditorKit(new HTMLEditorKit());
+		chatWindow.setEditable(false);
+		DefaultCaret caret = (DefaultCaret)chatWindow.getCaret();
+		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 		buttonSend.addActionListener( new ActionListener() {	
 		public void actionPerformed( ActionEvent event ) {
 			    if(! userText.getText().equals("") ) {
@@ -115,12 +159,17 @@ public class Client extends JFrame {
 	 */
 	public void startClient() throws IndexOutOfBoundsException, ClassNotFoundException {
 		try{
+				//Verbindung zu Server aufbauen
 				connectToServer();
+				//Input und Outputströme aufbauen
 				setupStreams();
 				try{
+					//Verschlüsselungsdaten übertragen
 					setupKrypto();
+					//Chatvorgang verwalten
 					whileChatting();	
 				}catch(IndexOutOfBoundsException indexOutOfBoundsException) {
+					//Alle Verbindungen schließen
 					closeCrap();
 				}
 				
@@ -129,6 +178,7 @@ public class Client extends JFrame {
 		}catch(IOException ioException) {
 			showMessage("\n client hat verbindung getrennt");
 		}finally{
+			//Alle Verbindungen schließen
 			closeCrap();
 		}
 		
@@ -161,7 +211,6 @@ public class Client extends JFrame {
 		}
 		System.out.println("Streams eingerichtet");
 		showMessage("\n iostreams eingerichtet\n");
-		showMessage("---------Konversation beginnt--------");
 	}
 	
 	private void setupKrypto() throws IOException, ClassNotFoundException{
@@ -189,7 +238,8 @@ public class Client extends JFrame {
 			System.out.println("Passwort abgelehnt");
 			this.dispose();
 		}
-		showMessage("Verschlüsselung zu Server: " + connection.getInetAddress().getCanonicalHostName() + " eingerichtet");
+		showMessage("Verschlüsselung zu Server: " + connection.getInetAddress().getCanonicalHostName() + " eingerichtet\n---------------------------" +
+				"------------------------------------------");
 	}
 	
 	/**
@@ -199,17 +249,22 @@ public class Client extends JFrame {
 	private void whileChatting() throws IOException, EOFException, ClassNotFoundException {
 		//Ende des Verbindungsaufbaus und der RSA-Uebertragung. Chatfunktion startet...
 		ableToType(true); 
-		do{	
-			talkMessage = (String) input.readObject();
-			if(!talkMessage.startsWith("@rsa")) { //RSA Verbindungsdaten ignorieren
+		do{	try{
+				talkMessage = (String) input.readObject();
+		}catch(EOFException eofException) {
+			//Server beendet Verbindung abfangen und Frage nach ReConnect
+			System.out.println(eofException);
+			break;
+		}
+				if(!talkMessage.startsWith("@rsa")) { //RSA Verbindungsdaten ignorieren
 				if(talkMessage.startsWith("cr1")) {
 					//System.out.println("Cipher: " + message);	
 					talkMessage = clientCrypto.decryptMessage(talkMessage.substring(3), clientCrypto.rounds);
-					showMessage(talkMessage);
-				}else{
-					showMessage(talkMessage);
 				}
 			}
+			//Formatierung des anzuzeigenden Texts
+			//talkMessage = 
+			showMessage(talkMessage);
 		}while(true);
 	}
 	/**
@@ -245,60 +300,62 @@ public class Client extends JFrame {
 	
 	}
 	
-	/**
+	/** private void sendMessage(String message)
+	 * Versendet die Nachricht im Klartext
 	 * 
 	 * @param message
 	 */
 	private void sendMessage(String message) {
 		try{
-			output.writeObject(userName + "[" + new java.util.Date().toString().substring(4,16) + "]:\n"+ message);
+			//Html OutputString erzeugen und in Outputstream legen
+			output.writeObject("<html><font color=" + myNameColor + "><b>" + userName + "</b></font><font color=a3a3a3>[" + new java.util.Date().toString().substring(4,16) + "]:</font><br><b>" + message + "</b></html>");
+			//versenden
 			output.flush();
 			//writeLogFile("client[" + new java.util.Date().toString().substring(4,16) + "]:\n"+ message + "\n", new File("/home/mrtransistor/workspace/InputOutputInterface/src/logFile.log"));
-			//showMessage(userName + "[" + new java.util.Date().toString().substring(4,16) + "]:\n"  + message);
 		}catch(IOException ioException) {
-			chatWindow.append("\n nachrichten senden führte zu fehler");
+			System.out.println("Senden fehlgeschlagen");
 		}	
 	}
 	
-	/**
-	 * 
+	/**public void sendMessageEncrypted(String message)
+	 * Versendet die eingegebende Nachricht verschlüsselt
 	 * @param message
 	 */
 		public void sendMessageEncrypted(String message) {
 			try{
-				output.writeObject("cr1" + clientCrypto.encryptMessage(userName + "[-c- " + new java.util.Date().toString().substring(4,16) + "]:\n" + message, clientCrypto.rounds));
+				//Nachricht in HTML formatieren und verschüsselt in den outputstream legen
+				output.writeObject("cr1" + clientCrypto.encryptMessage("<html><font color=" + myNameColor + "><b>" + userName + "</b></font><font color=9f9f9f>[" + new java.util.Date().toString().substring(4,16) + "]:</font><br><b>" + message + "</b></html>", clientCrypto.rounds));
+				//versenden
 				output.flush();
 				//writeLogFile("client[" + new java.util.Date().toString().substring(4,16) + "]:\n"+ message + "\n", new File("/home/mrtransistor/workspace/InputOutputInterface/src/logFile.log"));
-				//System.out.println(cryptoModule.encryptMessage("client: " + message, cryptoModule.rounds));
-				//showMessage(userName + "[-c- " + new java.util.Date().toString().substring(4,16) + "]:\n"+ message);
 			}catch(IOException ioException){
 				ioException.printStackTrace();
 			}
 		
 		}
-		
-		/**
-		 * 
-		 */
-		private void killConnectionOnClose() {
-			new Runnable() {
-					public void run() {
-							while(isActive()){}
-							System.out.println("TOT");
-							sendMessage("killme");
-					}
-			};
-		}
 	
 	/**
-	 * 
+	 * private void showMessage(final String text) zeigt empfangende Nachrichten
+	 * im Chatfenster an.
+	 * @param text
 	 */
-	private void showMessage(final String m) {
+	private void showMessage(final String text) {
 		SwingUtilities.invokeLater(
 				new Runnable() {
 					public void run(){
-						chatWindow.append("\n" + m);
-				}
+						//Dokument aus chatWindow holen und ablegen.
+						Document doc  = chatWindow.getDocument();
+						try {
+							//Mittels HTMLEditorkit doc (Dokument) als HTMLDocument am Ende (doc.getLength()) des Dokmuentes anhängen.
+							new HTMLEditorKit().insertHTML((HTMLDocument) doc, doc.getLength(), text, 0,0, null);
+						} catch (BadLocationException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}				
+					}
 			}
 		);
 	}

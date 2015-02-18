@@ -52,7 +52,6 @@ public class ClientTest {
 		if(!endFrage.printGui()) {
 			schalter = false;
 		}
-
 		}
 		System.out.println("Programm Beendet");
 	}

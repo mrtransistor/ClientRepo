@@ -47,7 +47,7 @@ public class AskUserYesNo {
     	buttonPanel.setVisible(true);
     	askFrame.add(askLabel, BorderLayout.PAGE_START);
     	askFrame.add(buttonPanel, BorderLayout.PAGE_END);
-    	askFrame.setSize(175, 50);
+    	askFrame.setSize(200, 75);
     	askFrame.setLocation(250, 250);
     	askFrame.setVisible(true);
 		while(getKillGui) {
