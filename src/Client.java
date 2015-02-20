@@ -215,6 +215,7 @@ public class Client extends JFrame {
 	
 	private void setupKrypto() throws IOException, ClassNotFoundException{
 		String tempInput = "";
+		String pubKey = "";
 		//Oeffentlichen Schluessel an Server uebertragen
 		output.writeObject(clientCrypto.e.toString() + "&" + clientCrypto.n.toString() +":"+ clientName);
 		output.flush();
@@ -224,11 +225,13 @@ public class Client extends JFrame {
 		tempInput = (String) input.readObject();
 		System.out.println("tempInput: " + tempInput);
 		//Password benoetigt ?
-		if(tempInput.equals("::pw::")) {
-		AskPassword myPassword = new AskPassword("Passwortabfrage", "Der Server verlangt ein Passwort");
-		System.out.println("Passwort: " + myPassword.answerOfUser);
-		output.writeObject(myPassword.answerOfUser);
-		output.flush();
+		if(tempInput.startsWith("::pw::")) {
+			//PublicKey extrahieren
+			pubKey = tempInput.substring(6);
+			//Passwortabfrage bei Client starten
+			AskPassword myPassword = new AskPassword("Passwortabfrage", "Der Server verlangt ein Passwort");
+			output.writeObject(new BigInteger("1" + stringToAsciiStringAndShift(myPassword.answerOfUser, 0)).modPow( new BigInteger(pubKey.substring(6, pubKey.indexOf('&'))) , new BigInteger(pubKey.substring(pubKey.indexOf('&')))).toString());
+			output.flush();
 		}
 		
 		System.out.println("Subkey holen und setzen");
@@ -387,6 +390,37 @@ public class Client extends JFrame {
 		}
 		
 
-	
+		/**
+		 * public String stringToAsciiString(String message)<br>
+		 * Liest einen String ein und baut daraus einen String der die ASCII 
+		 * Zeichen des eingelesenen Strings repräsentiert. z.B. "abc" -> "097098099"
+		 * und gibt diesen zurück.
+		 * 
+		 * Liefert Grundlage für RSA Verschlüsselung aus LetterString
+		 * 
+		 * @param message 
+		 * @return dezimale ASCII-Reprästentation eines Strings
+		 */
+		public String stringToAsciiStringAndShift(String message, int shift) {
+			//Zwischenspeicher
+			String temp = "";
+			//hält Ergebnis der Funktion
+			String result = "";
+			//Nachricht zeichenweise durchgehen
+			for (int i = 0; i < message.length(); i++) {
+				//dezimalen Ascii-Wert des aktuellen Zeichens als String ablegen
+				temp = String.valueOf((int) message.charAt(i) + shift);
+				//Ascii-Wert == 2, eine 0 davor stellen : "98" -> "098"
+				if(temp.length() == 2) {
+					temp = "0" + temp;
+				}
+				//an ErgebnisString anhängen (append)
+				result += temp;
+			}
+			//Ergebnis zurückgeben: z.B message = "abc" -> return "097098099" 
+			//!!! 1 muss noch voran gestellt werden !!! um später korrekt verarbeitet werden zu können mit BigInteger
+			// new BigInteger("050") -> keine gueltige Zahl | new BigInteger("1050") -> gueltige Zahl  
+			return result;
+		}
 	
 }
