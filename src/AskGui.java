@@ -10,22 +10,23 @@ import javax.swing.JLabel;
 import javax.swing.JTextField;
 
 
-public class AskGui implements Callable<String> {
+public class AskGui implements Callable<String>{
 	JFrame askFrame;
 	JLabel askLabel;
 	JTextField answerTextField;
-	String hostAddress = "";
-	String tempNameOfFrame = "";
-	String questionString = "";
+	String hostAddress = ""; 
+	String tempNameOfFrame;
+	String questionString;
 	
+
 	
-	public AskGui(String nameOfFrame, String questionToUser) {
-		tempNameOfFrame = nameOfFrame;
-		questionString = questionToUser;
+	public AskGui(String a, String b) {
+		this.tempNameOfFrame = a;
+		this.questionString = b;
+		System.out.println("GUI anzeigen");
 	}
-	
+
 	public String call() {
-			System.out.println("Leer?" + hostAddress.isEmpty());
 			askFrame = new JFrame(tempNameOfFrame);
 			askFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			askLabel = new JLabel(questionString);
@@ -50,7 +51,12 @@ public class AskGui implements Callable<String> {
 			System.out.println(askFrame.isActive());
 			boolean isEmpty = true;
 			while(isEmpty = hostAddress.isEmpty()) { //System.out.println("Leer: " + hostAddress.isEmpty());
-			System.out.println(isEmpty);
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			}
 			return hostAddress;
 	}

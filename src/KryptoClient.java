@@ -1,6 +1,7 @@
 import java.io.*;
 import java.lang.reflect.Array;
 import java.net.*;
+import java.util.Random;
 import java.math.*;
 
 public class KryptoClient {
@@ -12,11 +13,6 @@ public class KryptoClient {
 	public BigInteger e;  
 	private BigInteger d; 
 	private String cryptoConfig; 
-	private final int[] primeArray = {11093, 11113, 11117, 11119, 11131, 11149, 11159, 11161, 11171, 11173, 11177, 11197, 11213, 11239,	
-			  15107, 15121, 15131, 15137, 15139, 15149, 15161, 15173, 15187, 15193, 15199, 15217, 15227, 15233,
-			  17011, 17021, 17027, 17029, 17033, 17041, 17047, 17053, 17077, 17093, 17099, 17107, 17117, 17123,
-			  18089, 18097, 18119, 18121, 18127, 18131, 18133, 18143, 18149, 18169, 18181, 18191, 18199, 18211,
-			  18217, 18223, 18229, 18233, 18251, 18253, 18257, 18269, 18287, 18289, 18301, 18307, 18311, 18313};
 	int subKey;
 	
 	public void setCryptoConfig(String cryptoConfig) {
@@ -149,37 +145,12 @@ public class KryptoClient {
 	}
 		
 		
-	/*//Positionen in Nachrichten Array korrigieren durch Verschiebung mit subKey
-	private String deSubstitute(char[] cipherArray) {
-
-		char[] deSubstitutedArray = new char[cipherArray.length];
-		int position = 0;
-		for(int i = 0; i < cipherArray.length; i++) {
-			
-			for(int j = 0; j < alphabet.length; j++) {
-				
-				if(cipherArray[i] ==  alphabet[j]) {
-					//calc position
-					if(j < subKey) { // wenn subkey größer als verbleibende Buchstaben im Alphabet
-						position = alphabet.length -(subKey - j);
-						
-					}
-					else{ position = j - subKey; }
-					deSubstitutedArray[i] = alphabet[position]; // -1 -> Verschiebung von Alphabet zu ArrayCounter
-				    j = alphabet.length;
-				}
-			}//System.out.println("raus " + i + " cA: " + cipherArray[i]);
-		}
-		return String.valueOf(deSubstitutedArray);
-	} 
-	*/
-	
 	public void getTwoRandomPrimes(){
 		//Erstelle Zufallszahlen und übergebe an globale Werte von choose1/choose2
 		
 		do{
-			choose1 = new BigInteger(intToString(primeArray[(int) ((Math.random() * primeArray.length))]));
-			choose2 = new BigInteger(intToString(primeArray[(int) ((Math.random() * primeArray.length))]));
+			choose1 = BigInteger.probablePrime(128, new Random());
+			choose2 = BigInteger.probablePrime(128, new Random());
 			}while(choose1 == choose2);	
 		//System.out.println(choose1 + "  |  " + choose2);
 	}
@@ -191,7 +162,7 @@ public class KryptoClient {
 	public void calcE(BigInteger phi_N) {
 		
 		BigInteger ggT;
-		BigInteger i = new BigInteger("1000");
+		BigInteger i = new BigInteger("100000");
 		
 		do{
 			i= i.add(BigInteger.ONE);

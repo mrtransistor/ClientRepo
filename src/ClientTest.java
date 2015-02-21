@@ -15,43 +15,32 @@ import javax.swing.JTextField;
 
 public class ClientTest {
 	
-	public ClientTest() {
-		
-	}
 	
-	private static String printAskGui(String Name, String Question) {
-		ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
-	    Future<String> ask = singleThreadExecutor.submit(new AskGui(Name, Question));
-		String a ="";
-		try {
-			a = ask.get();
-			System.out.println(a);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return a;
-	}
 	
 	public static void main(String[] args) {
+		AskGui myAskGui = new AskGui("Host Adresse?", "IP des Servers?");
+		
+		String name = "";
+		String host = "";
+		
 		boolean schalter = true;
 		while(schalter) {
-
-		try {
-			new Client(printAskGui("Host?", "Bitte geben Sie die Server IP ein:"), printAskGui("Clientname", "Ihr Name? "));
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 		//Client initialisieren mit RückgabeWert(IP) von printAskGui()
+			try {
+				host = myAskGui.call();
+				myAskGui = new AskGui("Ihr Name", "bitte geben Sie ihren UserName ein");
+				name = myAskGui.call();
+				new Client(host, name);
+			} catch (ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} 		//Client initialisieren mit RückgabeWert(IP) von printAskGui()
 		
 		
-		AskUserYesNo endFrage = new AskUserYesNo("Reconnect?", "Frage an User");
+		/*AskUserYesNo endFrage = new AskUserYesNo("Reconnect?", "Frage an User");
 		if(!endFrage.printGui()) {
 			schalter = false;
-		}
+		}*/
+		schalter = false;
 		}
 		System.out.println("Programm Beendet");
 	}

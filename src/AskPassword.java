@@ -1,15 +1,15 @@
 
 	
 	import java.awt.BorderLayout;
-	import java.awt.event.ActionEvent;
-	import java.awt.event.ActionListener;
-	import java.io.BufferedReader;
-	import java.io.InputStreamReader;
-	import java.util.concurrent.Callable;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.concurrent.Callable;
 
 	import javax.swing.JFrame;
-	import javax.swing.JLabel;
-	import javax.swing.JTextField;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
 
 
 	public class AskPassword {
@@ -28,7 +28,6 @@
 		}
 		
 		public String askUser() {
-				System.out.println("Leer?" + answerOfUser.isEmpty());
 				askFrame = new JFrame(tempNameOfFrame);
 				askFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 				askLabel = new JLabel(questionString);
@@ -39,7 +38,6 @@
 							public void actionPerformed(ActionEvent event){
 								answerOfUser = answerTextField.getText();
 								//System.out.println("IP: " + hostAddress);
-								answerTextField.setText("Danke für ihre Eingabe");
 								answerTextField.setEditable(false);
 								askFrame.dispose();
 							}
@@ -50,10 +48,15 @@
 				askFrame.pack();
 				askFrame.setLocation(175, 150);
 				askFrame.setVisible(true);
-				System.out.println(askFrame.isActive());
+				//System.out.println(askFrame.isActive());
 				boolean isEmpty = true;
 				while(isEmpty = answerOfUser.isEmpty()) { //System.out.println("Leer: " + hostAddress.isEmpty());
-				System.out.println(isEmpty);
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				}
 				return answerOfUser;
 		}

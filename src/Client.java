@@ -47,9 +47,9 @@ public class Client extends JFrame {
 				clientCrypto = new KryptoClient();
 				//ClientGui zeichnen
 				printClientGui();
-				//Farbe setzen
+				//Username Farbe zufällig generieren
 				setRandomNameColor();
-				showMessage("Ihre zufällige Farbe ist: " + myNameColor);
+				showMessage("<b>" + userName + "</b> deine zufällige Farbe ist: <font color=" + myNameColor + "><b>" + myNameColor + "</b></font>");
 				//Client starten
 				startClient();
 				//ClientGui zerstören
@@ -63,8 +63,8 @@ public class Client extends JFrame {
 		String singleHexValue;
 		for(int i = 0; i < 6; i++) {
 			singleHexValue = String.valueOf((int) Math.round( Math.random() * 15));
+			//Zufallszahlen an Hexadezimalsystem anpassen
 			switch(singleHexValue) {
-			
 			case "10": singleHexValue = "A";
 			break;
 			case "11": singleHexValue = "B";
@@ -186,10 +186,10 @@ public class Client extends JFrame {
 	
 	//Verbindung zum Server aufbauen
 	private void connectToServer() throws IOException {
-		showMessage("\ntrying to connect...");
+		showMessage("\nVerbindungsaufbau...");
 		connection = new Socket(InetAddress.getByName(serverIP), 3336);
-		System.out.println("IsConnected: " + connection.isConnected());
-		showMessage("\nconnected to server: " + connection.getInetAddress().getHostName());
+		//System.out.println("IsConnected: " + connection.isConnected());
+		showMessage("\nVerbindung zu:<b> " + connection.getInetAddress().getHostName() + "</b> hergestellt.");
 	}
 
 	//IOStreams starten und konfigurieren
@@ -209,8 +209,8 @@ public class Client extends JFrame {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("Streams eingerichtet");
-		showMessage("\n iostreams eingerichtet\n");
+		System.out.println("IOStreams eingerichtet");
+		//showMessage("\n iostreams eingerichtet\n");
 	}
 	
 	private void setupKrypto() throws IOException, ClassNotFoundException{
@@ -221,32 +221,40 @@ public class Client extends JFrame {
 		output.flush();
 		System.out.println("RSAnachricht: " + clientCrypto.e.toString() + "&" + clientCrypto.n.toString());
 		
-
+		//von Server Passwortabfrage & PublicKey empfangen oder nur Public Key
 		tempInput = (String) input.readObject();
 		System.out.println("tempInput: " + tempInput);
+		System.out.println(tempInput.startsWith("::pw::"));
 		//Password benoetigt ?
 		if(tempInput.startsWith("::pw::")) {
 			//PublicKey extrahieren
 			pubKey = tempInput.substring(6);
+			System.out.println("pubKey e: " + pubKey.substring(0, pubKey.indexOf('&')));
+			System.out.println("pubKey n: " + pubKey.substring(pubKey.indexOf('&')+1));
 			//Passwortabfrage bei Client starten
 			AskPassword myPassword = new AskPassword("Passwortabfrage", "Der Server verlangt ein Passwort");
-			output.writeObject(new BigInteger("1" + stringToAsciiStringAndShift(myPassword.answerOfUser, 0)).modPow( new BigInteger(pubKey.substring(6, pubKey.indexOf('&'))) , new BigInteger(pubKey.substring(pubKey.indexOf('&')))).toString());
+			System.out.println("Passwort: " + myPassword.answerOfUser);
+			String s = stringToAsciiStringAndShift(myPassword.answerOfUser, 0);
+			System.out.println("String: " +"1" + s);
+			BigInteger testMe = new BigInteger("1" + s).modPow( new BigInteger(pubKey.substring(0, pubKey.indexOf('&'))) , new BigInteger(pubKey.substring(pubKey.indexOf('&')+1)));
+			System.out.println("BigInteger: " + testMe);
+			output.writeObject(new BigInteger("1" + s).modPow( new BigInteger(pubKey.substring(0, pubKey.indexOf('&'))) , new BigInteger(pubKey.substring(pubKey.indexOf('&')+1))).toString());
 			output.flush();
 		}
 		
-		System.out.println("Subkey holen und setzen");
 		try{
 		clientCrypto.setCryptoConfig(clientCrypto.privateKeyDecrypt(new BigInteger((String) input.readObject())).toString());
+		showMessage("Password akzeptiert - Krypto erfolgreich eingerichtet");
 		}catch(EOFException eofException) {
 			System.out.println("Passwort abgelehnt");
 			this.dispose();
 		}
-		showMessage("Verschlüsselung zu Server: " + connection.getInetAddress().getCanonicalHostName() + " eingerichtet\n---------------------------" +
+		showMessage("<b>Verbindung zu " + connection.getInetAddress().getCanonicalHostName() + " vollständig eingerichtet</b>\n---------------------------" +
 				"------------------------------------------");
 	}
 	
 	/**
-	 * 
+	 * " 
 	 * @throws IOException
 	 */
 	private void whileChatting() throws IOException, EOFException, ClassNotFoundException {
