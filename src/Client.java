@@ -26,20 +26,23 @@ public class Client extends JFrame {
 	KryptoClient clientCrypto;
 	private final JButton buttonSend = new JButton( "Send" );
 	private final JButton buttonEncryptedSend = new JButton("crypt Send");
-	private final JButton buttonFire = new JButton("Fire");
+	private final JButton buttonFire = new JButton("Spielen");
 	private JTextField userText;
 	private JTextPane chatWindow;
 	private ObjectOutputStream output;
 	private ObjectInputStream input;
-	private String message = "";
 	private String talkMessage = "";
 	private String serverIP;
 	private Socket connection = null; 
-	private String rounds;
 	private String userName = "";
 	private String myNameColor = "";
+	public boolean runningRequest = false;
+	public boolean runningGame = false; 
+	public String requestSendTo = "";
+	public String playedGame = "";
+	public String responseValue = ""; 
 	//constructor
-	public Client(String host, String clientName) throws ClassNotFoundException{
+	public Client(String host, String clientName) throws ClassNotFoundException {
 		super("AWIM - CLIENT - UserName: "+ clientName);
 				this.host = host;
 				this.clientName = clientName;
@@ -83,6 +86,7 @@ public class Client extends JFrame {
 			myNameColor += singleHexValue;
 		}
 	}
+	
 	/**
 	 * 
 	 */
@@ -127,13 +131,22 @@ public class Client extends JFrame {
 		  				userText.setText(""); //reset Texteingabefeld
 		  		  }
 		  		} );	        
-		    	//buttonFire.setSize(125,35);
 		    	buttonFire.addActionListener( new ActionListener() {
-		    		  @Override public void actionPerformed( ActionEvent event ) {
-		    			    sendMessage(userText.getText() ); // Eingabe holen
-		    				userText.setText(""); //reset Texteingabefeld
+		    		  public void actionPerformed( ActionEvent event ) {
+		    			  if(!runningRequest || !runningGame) {
+		    				  String s = userText.getText();
+		    				  if(s.contains("$") && s.length() > 2) {
+		    					  hiddenSend("@play" + s); // Eingabe holen
+		    					  runningRequest = true;
+		    					  requestSendTo = s.substring(0, s.indexOf('$'));
+		    					  playedGame =  s.substring(s.indexOf('$')+1);
+		    				  	}
+		    			  }else{
+		    				showMessage("Spielanfrage zur Zeit nicht möglich. Bereits Anfrage gesendet oder noch im Spiel ?");
+		    			  }
+		    			  userText.setText(""); //reset Texteingabefeld	
 		    		  }
-		    		} );		    
+		    	});		    
 		    	JPanel buttonPanel = new JPanel();
 		    	buttonPanel.setLayout( new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
 		    	buttonPanel.add(buttonSend);
@@ -267,15 +280,34 @@ public class Client extends JFrame {
 			System.out.println(eofException);
 			break;
 		}
-				if(!talkMessage.startsWith("@rsa")) { //RSA Verbindungsdaten ignorieren
+			if(!talkMessage.startsWith("@rsa")) { //RSA Verbindungsdaten ignorieren
 				if(talkMessage.startsWith("cr1")) {
 					//System.out.println("Cipher: " + message);	
 					talkMessage = clientCrypto.decryptMessage(talkMessage.substring(3), clientCrypto.rounds);
 				}
 			}
-			//Formatierung des anzuzeigenden Texts
-			//talkMessage = 
-			showMessage(talkMessage);
+			//Befehl oder Nachricht
+			if(talkMessage.length() > 5 && talkMessage.startsWith("@play")) {
+				System.out.println("talkMessage: " + talkMessage);
+				new PlayGame(talkMessage.substring(5, talkMessage.indexOf('$')), talkMessage.substring(talkMessage.indexOf('$')+1), this).run();
+			}else if(talkMessage.length() > 8 && talkMessage.startsWith("@response")) {
+				responseValue = talkMessage.substring(9, talkMessage.indexOf('$'));
+				System.out.println("responseValue: " + responseValue);
+				if(responseValue.equals("true")) {
+					//Spielername und Spiel das richtige ?
+					if(playedGame.equals(talkMessage.substring(talkMessage.indexOf('$')+1, talkMessage.indexOf('&'))) && requestSendTo.equals(talkMessage.substring(talkMessage.indexOf('&')+1))) {
+						//Start playedGame;
+						System.out.println("Game wird gestartet bei " + this.userName);
+					}	
+				}else{
+					showMessage("Spielanfrage von " + requestSendTo  +" abgelehnt");
+					runningGame = false;
+					runningRequest = false;
+					requestSendTo = "";
+					playedGame = "";
+					responseValue = "";
+				}
+			}
 		}while(true);
 	}
 	/**
@@ -297,14 +329,11 @@ public class Client extends JFrame {
 	 * 
 	 * @param message
 	 */
-	private void hiddenSend(String message) {
+	public void hiddenSend(String message) {
 		
-		try{System.out.println(message);
+		try{System.out.println("Message to Opponent: " + message);
 			output.writeObject(message);
 			output.flush();
-			//output.writeObject(cryptoModule.n);
-			//output.flush();
-			//showMessage("server: " + message);
 		}catch(IOException ioException){
 			ioException.printStackTrace();
 		}

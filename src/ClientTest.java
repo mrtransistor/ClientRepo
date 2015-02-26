@@ -18,23 +18,25 @@ public class ClientTest {
 	
 	
 	public static void main(String[] args) {
-		AskGui myAskGui = new AskGui("Host Adresse?", "IP des Servers?");
-		
+		AskGui myAskGui1 = new AskGui("Host Adresse?", "IP des Servers?");
+		//AskGui myAskGui2;
 		String name = "";
 		String host = "";
 		
 		boolean schalter = true;
 		while(schalter) {
 			try {
-				host = myAskGui.call();
-				myAskGui = new AskGui("Ihr Name", "bitte geben Sie ihren UserName ein");
-				name = myAskGui.call();
+				host = myAskGui1.ask();
+				Thread.sleep(10);
+				myAskGui1 = new AskGui("Ihr Name", "bitte geben Sie ihren UserName ein");
+				name = myAskGui1.ask();
+				myAskGui1 = null;
 				new Client(host, name);
-			} catch (ClassNotFoundException e) {
+			} catch (ClassNotFoundException | InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} 		//Client initialisieren mit RückgabeWert(IP) von printAskGui()
-		
+
 		
 		/*AskUserYesNo endFrage = new AskUserYesNo("Reconnect?", "Frage an User");
 		if(!endFrage.printGui()) {
