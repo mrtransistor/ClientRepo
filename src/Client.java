@@ -41,6 +41,11 @@ public class Client extends JFrame {
 	public String requestSendTo = "";
 	public String playedGame = "";
 	public String responseValue = ""; 
+	public String opponentName;
+	public String receivedGame;
+	public int receivedPort;
+	
+	PlayGameClient pong;
 	//constructor
 	public Client(String host, String clientName) throws ClassNotFoundException {
 		super("AWIM - CLIENT - UserName: "+ clientName);
@@ -120,15 +125,16 @@ public class Client extends JFrame {
 			    if(! userText.getText().equals("") ) {
 			    	sendMessage(userText.getText()); // Eingabe holen
 			    	userText.setText(""); //reset Textfeld
-			    }
+			    	}
 				  }
 				});    
 				//buttonEncryptedSend.setSize(125,35);
 		        buttonEncryptedSend.addActionListener( new ActionListener() {
 		  		  @Override public void actionPerformed( ActionEvent event ) {
-		  			    
+		  			if(! userText.getText().equals("") ) {
 		  			    sendMessageEncrypted(userText.getText()); // Eingabe holen
 		  				userText.setText(""); //reset Texteingabefeld
+		  			}
 		  		  }
 		  		} );	        
 		    	buttonFire.addActionListener( new ActionListener() {
@@ -272,42 +278,62 @@ public class Client extends JFrame {
 	 */
 	private void whileChatting() throws IOException, EOFException, ClassNotFoundException {
 		//Ende des Verbindungsaufbaus und der RSA-Uebertragung. Chatfunktion startet...
+		boolean isRequest= false;
 		ableToType(true); 
 		do{	try{
+				//empfangene Daten einlesen
 				talkMessage = (String) input.readObject();
+				System.out.println("IN: " + talkMessage);
 		}catch(EOFException eofException) {
 			//Server beendet Verbindung abfangen und Frage nach ReConnect
 			System.out.println(eofException);
 			break;
 		}
-			if(!talkMessage.startsWith("@rsa")) { //RSA Verbindungsdaten ignorieren
-				if(talkMessage.startsWith("cr1")) {
-					//System.out.println("Cipher: " + message);	
-					talkMessage = clientCrypto.decryptMessage(talkMessage.substring(3), clientCrypto.rounds);
-				}
+			if(talkMessage.startsWith("cr1")) {
+				//System.out.println("Cipher: " + message);	
+				talkMessage = clientCrypto.decryptMessage(talkMessage.substring(3), clientCrypto.rounds);
 			}
-			//Befehl oder Nachricht
-			if(talkMessage.length() > 5 && talkMessage.startsWith("@play")) {
-				System.out.println("talkMessage: " + talkMessage);
-				new PlayGame(talkMessage.substring(5, talkMessage.indexOf('$')), talkMessage.substring(talkMessage.indexOf('$')+1), this).run();
-			}else if(talkMessage.length() > 8 && talkMessage.startsWith("@response")) {
-				responseValue = talkMessage.substring(9, talkMessage.indexOf('$'));
-				System.out.println("responseValue: " + responseValue);
-				if(responseValue.equals("true")) {
-					//Spielername und Spiel das richtige ?
-					if(playedGame.equals(talkMessage.substring(talkMessage.indexOf('$')+1, talkMessage.indexOf('&'))) && requestSendTo.equals(talkMessage.substring(talkMessage.indexOf('&')+1))) {
-						//Start playedGame;
-						System.out.println("Game wird gestartet bei " + this.userName);
-					}	
-				}else{
-					showMessage("Spielanfrage von " + requestSendTo  +" abgelehnt");
-					runningGame = false;
-					runningRequest = false;
-					requestSendTo = "";
-					playedGame = "";
-					responseValue = "";
-				}
+			else if(talkMessage.startsWith("@play") || talkMessage.startsWith("@response")) {
+					System.out.println("talkMessage: " + talkMessage);
+		
+					//SPIELAUFFORDERUNG?
+					if(talkMessage.length() > 5 && talkMessage.startsWith("@play")) {
+						isRequest = true;
+						this.receivedPort = Integer.parseInt(talkMessage.substring(talkMessage.indexOf('%')+1));
+						System.out.println("PlaygameClient auf " + this.userName + " versucht zu starten");
+						new Thread(new PlayGameClient(this.userName, talkMessage.substring(5, talkMessage.indexOf('$')), talkMessage.substring(talkMessage.indexOf('$')+1, talkMessage.indexOf('%')), this, isRequest, this.serverIP, this.receivedPort)).start();
+					} 
+					
+					//BEANTWORTUNG AUF GESENDETE SPIELANFRAGE?
+					if(talkMessage.length() > 8 && talkMessage.startsWith("@response")) {
+						responseValue = talkMessage.substring(9, talkMessage.indexOf('$'));
+						System.out.println("responseValue: " + responseValue);
+						if(responseValue.equals("true")) {
+							this.receivedGame = talkMessage.substring(talkMessage.indexOf('$')+1, talkMessage.indexOf('&'));
+							//Spielername und Spiel das richtige ?
+							if(playedGame.equals(this.receivedGame)) {
+								//Start playedGame;
+								System.out.println("Anfrage angenommen, Game wird gestartet bei " + this.userName);
+								isRequest = false;
+								//Spielumgebung starten
+								this.receivedPort = Integer.parseInt(talkMessage.substring(talkMessage.indexOf('%')+1));
+								new Thread(new PlayGameClient(this.userName, this.requestSendTo, this.playedGame, this, isRequest, this.serverIP, this.receivedPort)).start();
+							}	
+						}else{
+							showMessage("Spielanfrage von " + requestSendTo  +" abgelehnt");
+							runningGame = false;
+							runningRequest = false;
+							requestSendTo = "";
+							playedGame = "";
+							responseValue = "";
+						}
+					}
+			}else {//Weder @play noch @response in der Nachricht enthalten -> nur ausgeben
+				System.out.println("FIN: " + talkMessage);
+				//Nachricht anzeigen
+				showMessage(talkMessage);
 			}
+				
 		}while(true);
 	}
 	/**
